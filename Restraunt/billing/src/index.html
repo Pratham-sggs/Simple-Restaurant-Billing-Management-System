@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en" ng-app="cravingsApp">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Cravings Resto Bill Management</title>
+    <style>
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        h1 {
+    font-family: 'Tangerine', cursive;
+    font-size: 60px;
+    font-weight: 300; 
+    text-shadow: 4px 4px 4px #aaa;
+}
+
+        .logo-container {
+            display: flex;
+            align-items: center;
+        }
+
+        .logo {
+            width: 200px;
+            height: 200px; 
+            margin-right: 10px;
+        }
+
+        .bill-info {
+            text-align: right;
+        }
+
+        .customer-info {
+            margin-top: 20px;
+        }
+
+        .bill-details {
+            margin-top: 20px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            border: 1px solid #ccc;
+            padding: 8px;
+            text-align: center;
+        }
+
+        .add-item-btn {
+            background-color: green;
+            color: white;
+            border: 2px solid black;
+            padding: 10px 20px;
+            cursor: pointer;
+            margin-top: 20px;
+            transition: background-color 0.3s ease; /* Add transition for smooth hover effect */
+        }
+
+        .add-item-btn:hover {
+            background-color: lightgreen; /* Change background color on hover */
+        }
+
+        .add-item-btn:active {
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5); /* Add shadow on click */
+        }
+
+        .grand-total {
+            margin-top: 20px;
+            text-align: right;
+        }
+
+        .submit-btn {
+            background-color: white;
+            color: black;
+            border: 2px solid black;
+            padding: 10px 20px;
+            cursor: pointer;
+            margin-top: 20px;
+            transition: background-color 0.3s ease; /* Add transition for smooth hover effect */
+        }
+
+        .submit-btn:hover {
+            background-color: black;
+            color: white;
+        }
+
+        .submit-btn:active {
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5); 
+        }
+    </style>
+</head>
+
+<body ng-controller="BillController">
+    <div class="container">
+        <header>
+            <div class="logo-container">
+                <img src="./assets/img/food.png" alt="Restaurant Logo" class="logo">
+                <h1>Cravings Resto...</h1>
+            </div>
+        </header>
+
+        <div class="customer-info">
+            <label for="bill-number">Bill Number:</label>
+            <input type="text" id="bill-number" ng-model="billNumber" placeholder="Enter Bill Number"><br><br>
+            <label for="customer-name">Customer Name:</label>
+            <input type="text" id="customer-name" ng-model="customerName" placeholder="Enter Customer Name"><br><br>
+            <label for="payment-method">Payment Method:</label>
+            <input type="text" id="payment-method" ng-model="paymentMethod" placeholder="Enter Payment Method"><br><br>
+        </div>
+
+        <div class="bill-details">
+            <table id="bill-table">
+                <thead>
+                    <tr>
+                        <th>Food</th>
+                        <th>Quantity</th>
+                        <th>Price</th>
+                        <th>Total</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr ng-repeat="item in billItems">
+                        <td>{{ item.item }}</td>
+                        <td>{{ item.quantity }}</td>
+                        <td>{{ item.price }}</td>
+                        <td>{{ item.total }}</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <button type="button" ng-click="addItem()" class="add-item-btn">Add Item</button>
+            <button type="button" class="submit-btn" ng-click="submitBill()">Submit</button>
+            <button type="button" class="submit-btn" ng-click="showPreviousBills()">Previous Bills</button>
+        </div>
+
+        <div class="grand-total">
+            <p>Grand Total: {{ total }}</p>
+        </div>
+    </div>
+
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.8.2/angular.min.js"></script>
+    <script>
+        var cravingsApp = angular.module('cravingsApp', []);
+
+        cravingsApp.controller('BillController', function($scope, $window) {
+            $scope.total = 0;
+            $scope.billItems = [];
+
+            $scope.addItem = function() {
+                var item = prompt("Enter the food item:");
+                var quantity = parseInt(prompt("Enter the quantity:"));
+                if (item && quantity && !isNaN(quantity) && quantity > 0) {
+                    var price = getItemPrice(item);
+                    var total = price * quantity;
+                    $scope.total += total;
+
+                    $scope.billItems.push({
+                        item: item,
+                        quantity: quantity,
+                        price: price,
+                        total: total
+                    });
+                } else {
+                    alert("Invalid input. Please enter valid food item and quantity.");
+                }
+            };
+
+            $scope.submitBill = function() {
+                var billData = {
+                    billNumber: $scope.billNumber,
+                    customerName: $scope.customerName,
+                    paymentMethod: $scope.paymentMethod,
+                    totalAmount: $scope.total
+                };
+
+                localStorage.setItem('submittedBill', JSON.stringify(billData));
+
+                $scope.billNumber = '';
+                $scope.customerName = '';
+                $scope.paymentMethod = '';
+                $scope.total = 0;
+                $scope.billItems = [];
+
+                $window.alert('Bill submitted successfully!');
+            };
+
+            $scope.showPreviousBills = function() {
+                var submittedBill = JSON.parse(localStorage.getItem('submittedBill'));
+
+                var previousBillsWindow = $window.open('', '_blank', 'width=600,height=400');
+
+                previousBillsWindow.document.write(`
+                    <html>
+                    <head>
+                        <title>Previous Bills</title>
+                        <style>
+                            table {
+                                width: 100%;
+                                border-collapse: collapse;
+                            }
+                            th, td {
+                                border: 1px solid #ccc;
+                                padding: 8px;
+                                text-align: center;
+                            }
+                        </style>
+                    </head>
+                    <body>
+                        <h2>Previous Bills</h2>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Bill Number</th>
+                                    <th>Customer Name</th>
+                                    <th>Total Amount</th>
+                                    <th>Payment Method</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>${submittedBill.billNumber}</td>
+                                    <td>${submittedBill.customerName}</td>
+                                    <td>${submittedBill.totalAmount}</td>
+                                    <td>${submittedBill.paymentMethod}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </body>
+                    </html>
+                `);
+            };
+
+            function getItemPrice(item) {
+                switch (item) {
+                    case 'Rice':
+                    case 'Curry':
+                    case 'Chole Bhature':
+                        return 60;
+                    case 'Roti':
+                        return 10;
+                    case 'Tandoori Roti':
+                        return 14;
+                    case 'Butter Naan':
+                        return 16;
+                    default:
+                        return 0;
+                }
+            }
+        });
+    </script>
+</body>
+
+</html>
+
